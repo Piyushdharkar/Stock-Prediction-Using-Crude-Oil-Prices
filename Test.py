@@ -6,15 +6,15 @@ from sklearn import linear_model
 from sklearn import neural_network
 import matplotlib.pyplot as plt
 
+
 train_percent = 0.80
 
 companies = ['Reliance_Industries', 'Indian_Oil_Corporation', 'ONGC', 
              'Oil_India', 'Bharat_Petroleum', 'Hindustan_Petroleum']
 
+#Wrangling / Filtering of oil price data
 oilDataset = pd.read_csv('oil_prices.csv')
-
 oilDataset.columns = ['date', 'oil_price']
-
 oilDataset['date'] = pd.to_datetime(oilDataset['date'])
 
 removed_features = ['Open', 'High', 'Low', 'Volume', 'Close']
@@ -22,23 +22,28 @@ removed_features = ['Open', 'High', 'Low', 'Volume', 'Close']
 print("Pearson Coefficients :-")
 
 for company in companies:
+    #Wrangling / Filtering of stock price data    
     stockDataset = pd.read_csv(company + '.csv')
     stockDataset.drop(removed_features, axis = 1, inplace=True)
     stockDataset.columns = ['date', 'adj_close']
     stockDataset['date'] = pd.to_datetime(stockDataset['date'])
     
+    #merge oil and stock datasets using date as foreign key
     dataset = stockDataset.merge(oilDataset, on='date', how='right')
     dataset['oil_price'] = pd.to_numeric(dataset['oil_price'], errors='coerce')
     dataset['adj_close'] = pd.to_numeric(dataset['adj_close'], errors='coerce')
     dataset = dataset.dropna(0)
     
+    #drop date as it is no longer needed
     datasetWithoutDate = dataset.drop('date', axis=1)
     datasetWithoutDate = datasetWithoutDate[datasetWithoutDate.columns].astype(float)    
     
+    #Co-relation coefficient
     pearson, _ = pearsonr(dataset['oil_price'], dataset['adj_close'])
     
     print(company + " \t: " + str(pearson))
     
+#Split the dataset into training and testing data
 x_train, x_test, y_train, y_test = train_test_split(datasetWithoutDate['oil_price'],
                                                     datasetWithoutDate['adj_close'], 
                                                                       train_size=train_percent,
@@ -53,6 +58,7 @@ regressor.fit(pd.DataFrame(x_train), pd.DataFrame(y_train))
 
 y_pred = regressor.predict(pd.DataFrame(x_test))
 
+#Visualize
 plt.figure()
 
 plt.subplot(221)
